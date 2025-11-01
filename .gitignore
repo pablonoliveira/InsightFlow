@@ -1,0 +1,30 @@
+# Ignorar ambientes virtuais
+venv/
+.env
+
+# Ignorar arquivos temporários do Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignorar arquivos temporários do editor
+*.swp
+*.swo
+*.bak
+*.tmp
+*.log
+
+# Ignorar diretório de uploads temporários
+uploads/
+*.xlsx
+*.xls
+
+# Ignorar arquivos do sistema
+.DS_Store
+Thumbs.db
+
+# IGNORAR arquivos sensíveis, se usar chaves ou configs
+config.yaml
+*.key
+*.pem

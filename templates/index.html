@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>InsightFlow - Data Automation</title>
+    <style>
+        #matrix-bg {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: none;
+            background: #000;
+        }
+        .container {
+            max-width: 420px;
+            margin: 80px auto;
+            padding: 32px;
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 0 20px #222a;
+            position: relative;
+            z-index: 2;
+        }
+        h2 { color: #194b30; margin-bottom: 18px;}
+        .dropzone {
+            border: 2px dashed #2196F3;
+            border-radius: 8px;
+            padding: 35px;
+            text-align: center;
+            color: #666;
+            font-size: 18px;
+            background: #fafdff;
+            cursor: pointer;
+            transition: background 0.2s, border-color 0.2s;
+        }
+        .dropzone.dragover {
+            background: #e3f2fd;
+            border-color: #194b30;
+            color: #194b30;
+        }
+        .btn {
+            padding: 10px 22px;
+            background: #2196F3;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        #msg {
+            color: #194b30;
+            font-size: 16px;
+            margin-top: 18px;
+        }
+        #nomeArquivo {
+            font-size: 15px;
+            color: #444;
+            margin-bottom: 10px;
+            min-height: 22px;
+        }
+        small {
+            display: block;
+            margin-top: 24px;
+            text-align: center;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+<!-- Efeito Matrix logs binários -->
+<canvas id="matrix-bg"></canvas>
+
+<div class="container">
+    <!-- Barra Título do painel principal -->
+    <h2 style="text-align:center;">🌀 InsightFlow</h2>
+    <p style="font-size:18px; text-align:justify;">
+        Automatize o processamento de dados brutos e obtenha insights em segundos.<br>
+        <strong>Arraste</strong> o arquivo ou <strong>clique</strong> para selecionar.<br>
+        Depois, clique em <strong>Processar Arquivo</strong>.<br>
+        <span style="color:#b00;">(Somente um arquivo por vez)</span>
+    </p>
+    <div id="nomeArquivo"></div>
+    <form id="uploadForm" action="/upload" method="post" enctype="multipart/form-data">
+        <div id="dropzone" class="dropzone">
+            Arraste e solte aqui, ou clique para selecionar o arquivo.
+            <input type="file" name="file" id="fileInput" style="display:none;" required>
+        </div>
+        <button type="submit" class="btn" id="processarBtn">Processar Arquivo</button>
+    </form>
+    <div id="msg"></div>
+    <!-- Rodapé modernizado -->
+    <small>
+		🌀 InsightFlow <br>
+		Desenvolvido por Pablo Oliveira - November 2025.
+	</small>
+</div>
+
+<script>
+// Drag-and-drop + AJAX
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('fileInput');
+const nomeArquivo = document.getElementById('nomeArquivo');
+const msg = document.getElementById('msg');
+
+dropzone.addEventListener('click', () => fileInput.click());
+dropzone.addEventListener('dragover', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    dropzone.classList.add('dragover');
+});
+dropzone.addEventListener('dragleave', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    dropzone.classList.remove('dragover');
+});
+dropzone.addEventListener('drop', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    dropzone.classList.remove('dragover');
+    if (e.dataTransfer.files.length > 0) {
+        fileInput.files = e.dataTransfer.files;
+        nomeArquivo.textContent = "Selecionado: " + fileInput.files[0].name;
+    }
+});
+fileInput.addEventListener('change', () => {
+    if (fileInput.files.length > 0) {
+        nomeArquivo.textContent = "Selecionado: " + fileInput.files[0].name;
+    } else {
+        nomeArquivo.textContent = "";
+    }
+});
+document.getElementById('uploadForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    if (!fileInput.files.length) {
+        msg.textContent = "Selecione ou arraste um arquivo antes de processar!";
+        return;
+    }
+    msg.textContent = "Processando arquivo, aguarde...";
+    const formData = new FormData(this);
+    fetch('/upload', {
+        method: 'POST',
+        body: formData
+    }).then(response => {
+        if (!response.ok) throw new Error(response.statusText);
+        return response.blob();
+    }).then(blob => {
+        const downloadUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        const name = fileInput.files[0].name.replace(/(\.xls)$/i,'.xlsx');
+        a.download = name;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(downloadUrl);
+        }, 200);
+        msg.textContent = "Pronto! O download começou.";
+    }).catch(() => {
+        msg.textContent = "Problema ao processar o arquivo!";
+    });
+});
+
+// Matrix logs binários (Canvas)
+var canvas = document.getElementById('matrix-bg');
+var ctx = canvas.getContext('2d');
+function resizeMatrix() {
+    canvas.height = window.innerHeight;
+    canvas.width = window.innerWidth;
+}
+resizeMatrix();
+window.addEventListener('resize', resizeMatrix);
+
+var letters = Array(256).join("01").split("");
+var fontSize = 16;
+var columns = canvas.width / fontSize;
+var drops = [];
+for (var x = 0; x < columns; x++) drops[x] = 1;
+
+function draw() {
+    ctx.fillStyle = "rgba(0,0,0,0.07)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#17ff09";
+    ctx.font = fontSize + "px monospace";
+    for (var i = 0; i < drops.length; i++) {
+        var text = letters[Math.floor(Math.random() * letters.length)];
+        ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+        if (drops[i] * fontSize > canvas.height && Math.random() > 0.978) drops[i] = 0;
+        drops[i]++;
+    }
+}
+setInterval(draw, 33);
+</script>
+</body>
+</html>
